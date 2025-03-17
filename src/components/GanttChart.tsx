@@ -30,7 +30,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttChart }) => {
   return (
     <div className="flex flex-col items-center space-y-4">
       {/* Thanh Gantt Chart */}
-      <div className="relative flex items-center py-4 min-w-2xl ml-2">
+      <div className="relative flex items-center py-4 min-w-3xl ml-2">
         {fullChart.map((item, index) => {
           const widthPercentage =
             ((item.end - item.start) / totalDuration) * 100;

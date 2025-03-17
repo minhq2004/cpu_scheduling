@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Process, Queue } from "@/algorithms/type";
-import MultiLevelQueueInput from "./MultiLevelInputForm";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 interface InputFormProps {
@@ -12,10 +11,18 @@ interface InputFormProps {
 }
 
 export default function InputForm({ onSchedule }: InputFormProps) {
-  const [processes, setProcesses] = useState<Process[]>([]);
+  const initialState: Process[] = [
+    { id: 1, arrivalTime: 0, burstTime: 2 },
+    { id: 2, arrivalTime: 2, burstTime: 2 },
+    { id: 3, arrivalTime: 3, burstTime: 4 },
+    { id: 4, arrivalTime: 4, burstTime: 5 }
+  ]
+  
+  const [processes, setProcesses] = useState<Process[]>(initialState);
   const [algorithm, setAlgorithm] = useState<string>("FCFS");
   const [quantum, setQuantum] = useState<number>(1); // Thêm state để lưu giá trị quantum
 
+  
   const handleAddProcess = () => {
     setProcesses([
       ...processes,

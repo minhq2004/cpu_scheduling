@@ -24,5 +24,5 @@ export interface ScheduleResult {
     avgWaitingTime: number;
     avgResponseTime: number;
     avgTurnAroundTime: number;
-  }
+  } 
 }
