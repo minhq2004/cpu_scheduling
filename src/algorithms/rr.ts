@@ -1,87 +1,99 @@
 import { Process, ScheduleResult } from "./type";
 
 export const RR = (processes: Process[], quantum: number): ScheduleResult => {
-  const remainingProcesses = processes
+  const processStates = processes
     .map((p) => ({
       ...p,
       remainingTime: p.burstTime,
       firstRun: -1,
       waitingTime: 0,
-      lastEndTime: p.arrivalTime, // Lưu thời điểm tiến trình cuối cùng được chạy
     }))
-    .sort((a, b) => a.arrivalTime - b.arrivalTime);
+    .sort((a, b) => a.id - b.id); // Sort by ID for ascending order
 
-  let currentTime = remainingProcesses[0]?.arrivalTime || 0;
+  let currentTime = processStates[0]?.arrivalTime || 0;
   const ganttChart: { process: number; start: number; end: number }[] = [];
-  const resultProcesses: { id: number; waitingTime: number; responseTime: number; turnAroundTime: number; }[] = [];
-  const readyQueue: typeof remainingProcesses = [];
-  const unfinishedJobs = [...remainingProcesses];
-  const remainingTime = Object.fromEntries(remainingProcesses.map((p) => [p.id, p.remainingTime]));
+  const resultProcesses: {
+    id: number;
+    waitingTime: number;
+    responseTime: number;
+    turnAroundTime: number;
+  }[] = [];
+  const remainingTime = Object.fromEntries(
+    processStates.map((p) => [p.id, p.remainingTime])
+  );
+  const lastExecutionTime: Record<number, number> = {};
+  const completedProcesses = new Set<number>();
 
-  readyQueue.push(unfinishedJobs.shift()!);
-  const lastExecutionTime: Record<number, number> = {}; // Lưu thời điểm cuối cùng tiến trình được chạy
+  while (processStates.some((p) => remainingTime[p.id] > 0)) {
+    // Track which processes have run in this cycle
+    const ranThisCycle = new Set<number>();
 
-  while (unfinishedJobs.length > 0 || readyQueue.length > 0) {
-    if (readyQueue.length === 0 && unfinishedJobs.length > 0) {
-      readyQueue.push(unfinishedJobs[0]);
-      currentTime = readyQueue[0].arrivalTime;
+    // Process each available process once per cycle in ID order
+    for (const currentProcess of processStates) {
+      if (
+        currentProcess.arrivalTime <= currentTime && // Has arrived
+        remainingTime[currentProcess.id] > 0 && // Not completed
+        !ranThisCycle.has(currentProcess.id) // Hasn’t run this cycle
+      ) {
+        if (currentProcess.firstRun === -1)
+          currentProcess.firstRun = currentTime;
+
+        const executionTime = Math.min(
+          quantum,
+          remainingTime[currentProcess.id]
+        );
+        const start = currentTime;
+        const end = start + executionTime;
+
+        currentProcess.waitingTime +=
+          lastExecutionTime[currentProcess.id] !== undefined
+            ? start - lastExecutionTime[currentProcess.id]
+            : start - currentProcess.arrivalTime;
+        lastExecutionTime[currentProcess.id] = end;
+
+        ganttChart.push({ process: currentProcess.id, start, end });
+        remainingTime[currentProcess.id] -= executionTime;
+        currentTime = end;
+
+        ranThisCycle.add(currentProcess.id);
+
+        if (
+          remainingTime[currentProcess.id] <= 0 &&
+          !completedProcesses.has(currentProcess.id)
+        ) {
+          resultProcesses.push({
+            id: currentProcess.id,
+            waitingTime: currentProcess.waitingTime,
+            responseTime: currentProcess.firstRun - currentProcess.arrivalTime,
+            turnAroundTime: currentTime - currentProcess.arrivalTime,
+          });
+          completedProcesses.add(currentProcess.id);
+        }
+      }
     }
 
-    const currentProcess = readyQueue.shift()!;
-
-    if (currentProcess.firstRun === -1) {
-      currentProcess.firstRun = currentTime;
-    }
-
-    const executionTime = Math.min(quantum, remainingTime[currentProcess.id]);
-    const start = currentTime;
-    const end = start + executionTime;
-    currentTime = end;
-    
-    // Cập nhật tổng thời gian chờ thực tế 
-    if (lastExecutionTime[currentProcess.id] !== undefined) {
-      currentProcess.waitingTime += start - lastExecutionTime[currentProcess.id];
-    } else {
-      currentProcess.waitingTime += start - currentProcess.arrivalTime;
-    }
-
-    lastExecutionTime[currentProcess.id] = end; // Cập nhật lần chạy cuối cùng
-
-    ganttChart.push({ process: currentProcess.id, start, end });
-    remainingTime[currentProcess.id] -= executionTime;
-
-    const newArrivals = unfinishedJobs.filter((p) => p.arrivalTime <= currentTime && !readyQueue.includes(p));
-    readyQueue.push(...newArrivals);
-    unfinishedJobs.splice(0, newArrivals.length);
-
-    if (remainingTime[currentProcess.id] > 0) {
-      readyQueue.push(currentProcess);
-    } else {
-      const completionTime = currentTime;
-      const turnAroundTime = completionTime - currentProcess.arrivalTime;
-      const responseTime = currentProcess.firstRun - currentProcess.arrivalTime;
-
-      resultProcesses.push({
-        id: currentProcess.id,
-        waitingTime: currentProcess.waitingTime,
-        responseTime,
-        turnAroundTime,
-      });
+    // If no process ran (all arrived processes already ran this cycle or none available), move time forward
+    if (ranThisCycle.size === 0) {
+      const nextArrival = processStates
+        .filter((p) => remainingTime[p.id] > 0)
+        .reduce((min, p) => Math.min(min, p.arrivalTime), Infinity);
+      if (nextArrival === Infinity) break; // No more processes to run
+      currentTime = nextArrival;
     }
   }
 
   resultProcesses.sort((a, b) => a.id - b.id);
-
-  const totalWaitingTime = resultProcesses.reduce((sum, p) => sum + p.waitingTime, 0);
-  const totalResponseTime = resultProcesses.reduce((sum, p) => sum + p.responseTime, 0);
-  const totalTurnAroundTime = resultProcesses.reduce((sum, p) => sum + p.turnAroundTime, 0);
-
   const avg = {
-    avgWaitingTime: totalWaitingTime / processes.length,
-    avgResponseTime: totalResponseTime / processes.length,
-    avgTurnAroundTime: totalTurnAroundTime / processes.length,
+    avgWaitingTime:
+      resultProcesses.reduce((sum, p) => sum + p.waitingTime, 0) /
+      processes.length,
+    avgResponseTime:
+      resultProcesses.reduce((sum, p) => sum + p.responseTime, 0) /
+      processes.length,
+    avgTurnAroundTime:
+      resultProcesses.reduce((sum, p) => sum + p.turnAroundTime, 0) /
+      processes.length,
   };
 
   return { ganttChart, processes: resultProcesses, avg };
 };
-

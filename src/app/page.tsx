@@ -17,7 +17,8 @@ export default function Home() {
   const handleSchedule = (
     processes: Process[],
     algorithm: string,
-    quantum?: number
+    quantum?: number,
+    priorityType?: string
   ) => {
     let result: ScheduleResult;
     switch (algorithm) {
@@ -31,10 +32,18 @@ export default function Home() {
         result = SJFP(processes);
         break;
       case "PriorityN":
-        result = PN(processes);
+        if (priorityType === undefined) {
+          alert("Nhập tùy chọn ưu tiên");
+          return;
+        }
+        result = PN(processes, priorityType);
         break;
       case "PriorityP":
-        result = PP(processes);
+        if (priorityType === undefined) {
+          alert("Nhập tùy chọn ưu tiên");
+          return;
+        }
+        result = PP(processes, priorityType);
         break;
       case "RR":
         if (quantum === undefined) {

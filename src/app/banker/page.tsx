@@ -12,14 +12,14 @@ import {
 export default function Home() {
   const initialState: SystemState = {
     processes: [
-      { id: 0, allocation: [0, 1, 0], max: [7, 5, 3] },
-      { id: 1, allocation: [2, 0, 0], max: [3, 2, 2] },
-      { id: 2, allocation: [3, 0, 2], max: [9, 0, 2] },
-      { id: 3, allocation: [2, 1, 1], max: [2, 2, 2] },
-      { id: 4, allocation: [0, 0, 2], max: [4, 3, 3] },
+      { id: 0, allocation: [2, 0, 0, 1], max: [4, 2, 1, 2] },
+      { id: 1, allocation: [3, 1, 2, 1], max: [5, 2, 5, 2] },
+      { id: 2, allocation: [2, 1, 0, 3], max: [2, 3, 1, 6] },
+      { id: 3, allocation: [1, 3, 1, 2], max: [1, 4, 2, 4] },
+      { id: 4, allocation: [1, 4, 3, 2], max: [3, 6, 6, 5] },
     ],
-    totalResources: [10, 5, 7],
-    resourceNames: ["A", "B", "C"],
+    totalResources: [12, 12, 8, 10],
+    resourceNames: ["A", "B", "C", "D"],
   };
 
   const [state, setState] = useState<SystemState>(initialState);

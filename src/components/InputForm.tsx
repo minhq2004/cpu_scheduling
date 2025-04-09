@@ -6,23 +6,25 @@ interface InputFormProps {
   onSchedule: (
     processes: Process[],
     algorithm: string,
-    quantum?: number
+    quantum?: number,
+    priorityType?: string
   ) => void;
 }
 
 export default function InputForm({ onSchedule }: InputFormProps) {
   const initialState: Process[] = [
     { id: 1, arrivalTime: 0, burstTime: 2 },
-    { id: 2, arrivalTime: 2, burstTime: 2 },
-    { id: 3, arrivalTime: 3, burstTime: 4 },
-    { id: 4, arrivalTime: 4, burstTime: 5 }
-  ]
-  
-  const [processes, setProcesses] = useState<Process[]>(initialState);
-  const [algorithm, setAlgorithm] = useState<string>("FCFS");
-  const [quantum, setQuantum] = useState<number>(1); // Thêm state để lưu giá trị quantum
+    { id: 2, arrivalTime: 3, burstTime: 3 },
+    { id: 3, arrivalTime: 5, burstTime: 8 },
+    { id: 4, arrivalTime: 7, burstTime: 4 },
+    { id: 5, arrivalTime: 9, burstTime: 5 },
+  ];
 
-  
+  const [processes, setProcesses] = useState<Process[]>(initialState);
+  const [algorithm, setAlgorithm] = useState<string>("SJFP");
+  const [quantum, setQuantum] = useState<number>(1); // Thêm state để lưu giá trị quantum
+  const [priorityType, setPriorityType] = useState<string>("ASC");
+
   const handleAddProcess = () => {
     setProcesses([
       ...processes,
@@ -41,7 +43,7 @@ export default function InputForm({ onSchedule }: InputFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSchedule(processes, algorithm, algorithm === "RR" ? quantum : undefined);
+    onSchedule(processes, algorithm, quantum, priorityType);
   };
 
   return (
@@ -53,8 +55,7 @@ export default function InputForm({ onSchedule }: InputFormProps) {
         <select
           value={algorithm}
           onChange={(e) => setAlgorithm(e.target.value)}
-          className="mt-1 block w-full p-2 border border-gray-400 rounded-md text-black"
-        >
+          className="mt-1 block w-full p-2 border border-gray-400 rounded-md text-black">
           <option value="FCFS">FCFS</option>
           <option value="SJFN">SJF (Không cho phép dừng)</option>
           <option value="SJFP">SJF (Cho phép dừng)</option>
@@ -77,6 +78,20 @@ export default function InputForm({ onSchedule }: InputFormProps) {
           />
         </div>
       )}
+      {(algorithm === "PriorityN" || algorithm === "PriorityP") && (
+        <div className="p-2 flex space-x-2">
+          <label className="block text-md font-medium text-black">
+            Thứ tự ưu tiên
+          </label>
+          <select
+            value={priorityType}
+            onChange={(e) => setPriorityType(e.target.value)}
+            className="border border-black">
+            <option value="ASC">Ưu tiên từ bé đến lớn</option>
+            <option value="DESC">Ưu tiên từ lớn đến bé</option>
+          </select>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <table className="min-w-full table-footer-group border-collapse border border-gray-400">
@@ -90,7 +105,7 @@ export default function InputForm({ onSchedule }: InputFormProps) {
               </th>
               {(algorithm == "PriorityN" || algorithm == "PriorityP") && (
                 <th className="px-6 py-3 text-left font-bold border border-gray-300">
-                  Mức ưu tiên (Từ bé đến lớn)
+                  Mức ưu tiên
                 </th>
               )}
             </tr>
@@ -147,8 +162,7 @@ export default function InputForm({ onSchedule }: InputFormProps) {
                   <button
                     type="button"
                     onClick={() => handleDeleteProcess(process.id)}
-                    className="px-4 py-2 text-red-500 rounded-md"
-                  >
+                    className="px-4 py-2 text-red-500 rounded-md">
                     <DeleteIcon />
                   </button>
                 </td>
@@ -160,21 +174,18 @@ export default function InputForm({ onSchedule }: InputFormProps) {
           <button
             type="button"
             onClick={handleAddProcess}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
-          >
+            className="px-4 py-2 bg-blue-500 text-white rounded-md">
             Thêm tiến trình
           </button>
           <button
             type="button"
             onClick={resetAllProcess}
-            className="px-4 py-2 bg-red-500 text-white rounded-md"
-          >
+            className="px-4 py-2 bg-red-500 text-white rounded-md">
             Làm mới
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-green-500 text-white rounded-md"
-          >
+            className="px-4 py-2 bg-green-500 text-white rounded-md">
             Lập lịch
           </button>
         </div>

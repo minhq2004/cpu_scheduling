@@ -1,8 +1,13 @@
 import { Process, ScheduleResult } from "./type";
 
-export const PN = (processes: Process[]): ScheduleResult => {
-  // Sắp xếp các tiến trình 
-  const sortedByArrival = processes.sort((a, b) => a.arrivalTime - b.arrivalTime);
+export const PN = (
+  processes: Process[],
+  priorityType: string
+): ScheduleResult => {
+  // Sắp xếp các tiến trình
+  const sortedByArrival = processes.sort(
+    (a, b) => a.arrivalTime - b.arrivalTime
+  );
 
   let currentTime = 0;
   const ganttChart: { process: number; start: number; end: number }[] = [];
@@ -31,7 +36,11 @@ export const PN = (processes: Process[]): ScheduleResult => {
     // Chọn tiến trình được ưu tiên nhất
     const nextProcess = availableProcesses.reduce((prev, curr) => {
       if (curr.priority !== undefined && prev.priority !== undefined) {
-        return curr.priority < prev.priority ? curr : prev;
+        const compare =
+          priorityType === "ASC"
+            ? prev.priority < curr.priority
+            : prev.priority > curr.priority;
+        return compare ? prev : curr;
       }
       return prev;
     });
@@ -63,9 +72,18 @@ export const PN = (processes: Process[]): ScheduleResult => {
   resultProcesses.sort((a, b) => a.id - b.id);
 
   // Tính giá trị trung bình
-  const totalWaitingTime = resultProcesses.reduce((sum, p) => sum + p.waitingTime, 0);
-  const totalResponseTime = resultProcesses.reduce((sum, p) => sum + p.responseTime, 0);
-  const totalTurnAroundTime = resultProcesses.reduce((sum, p) => sum + p.turnAroundTime, 0);
+  const totalWaitingTime = resultProcesses.reduce(
+    (sum, p) => sum + p.waitingTime,
+    0
+  );
+  const totalResponseTime = resultProcesses.reduce(
+    (sum, p) => sum + p.responseTime,
+    0
+  );
+  const totalTurnAroundTime = resultProcesses.reduce(
+    (sum, p) => sum + p.turnAroundTime,
+    0
+  );
 
   const averages = {
     avgWaitingTime: totalWaitingTime / processes.length,
@@ -73,5 +91,5 @@ export const PN = (processes: Process[]): ScheduleResult => {
     avgTurnAroundTime: totalTurnAroundTime / processes.length,
   };
 
-  return { ganttChart, processes: resultProcesses, avg:averages };
+  return { ganttChart, processes: resultProcesses, avg: averages };
 };

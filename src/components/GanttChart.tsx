@@ -1,3 +1,4 @@
+import { FitScreen } from "@mui/icons-material";
 import React from "react";
 
 interface GanttChartProps {
@@ -47,8 +48,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ ganttChart }) => {
                   item.process === null
                     ? "transparent"
                     : `hsl(${item.process * 50}, 70%, 50%`,
-              }}
-            >
+              }}>
               {item.process !== null ? `P${item.process}` : ""}
               {/* Mốc thời gian dưới mỗi ô */}
               <span className="absolute bottom-[-20px] -left-1 text-gray-800 text-sm">

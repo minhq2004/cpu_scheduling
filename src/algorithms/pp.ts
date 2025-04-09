@@ -1,6 +1,9 @@
 import { Process, ScheduleResult } from "./type";
 
-export const PP = (processes: Process[]): ScheduleResult => {
+export const PP = (
+  processes: Process[],
+  priorityType: string
+): ScheduleResult => {
   const remainingProcesses = processes.map((p) => ({
     ...p,
     remainingTime: p.burstTime,
@@ -10,7 +13,12 @@ export const PP = (processes: Process[]): ScheduleResult => {
 
   let currentTime = Math.min(...processes.map((p) => p.arrivalTime));
   const ganttChart: { process: number; start: number; end: number }[] = [];
-  const resultProcesses: { id: number; waitingTime: number; responseTime: number; turnAroundTime: number; }[] = [];
+  const resultProcesses: {
+    id: number;
+    waitingTime: number;
+    responseTime: number;
+    turnAroundTime: number;
+  }[] = [];
   const lastExecutionTime: Record<number, number> = {}; // Lưu lần chạy cuối cùng của tiến trình
 
   while (remainingProcesses.length > 0) {
@@ -22,8 +30,11 @@ export const PP = (processes: Process[]): ScheduleResult => {
       currentTime++;
       continue;
     }
-
-    availableProcesses.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    if (priorityType === "ASC") {
+      availableProcesses.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    } else {
+      availableProcesses.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+    }
     const currentProcess = availableProcesses[0];
 
     if (currentProcess.firstRun === -1) {
@@ -32,15 +43,23 @@ export const PP = (processes: Process[]): ScheduleResult => {
 
     // Cập nhật waiting time nếu tiến trình bị gián đoạn
     if (lastExecutionTime[currentProcess.id] !== undefined) {
-      currentProcess.waitingTime += currentTime - lastExecutionTime[currentProcess.id];
+      currentProcess.waitingTime +=
+        currentTime - lastExecutionTime[currentProcess.id];
     } else {
       currentProcess.waitingTime += currentTime - currentProcess.arrivalTime;
     }
 
     currentProcess.remainingTime--;
 
-    if (ganttChart.length === 0 || ganttChart[ganttChart.length - 1].process !== currentProcess.id) {
-      ganttChart.push({ process: currentProcess.id, start: currentTime, end: currentTime + 1 });
+    if (
+      ganttChart.length === 0 ||
+      ganttChart[ganttChart.length - 1].process !== currentProcess.id
+    ) {
+      ganttChart.push({
+        process: currentProcess.id,
+        start: currentTime,
+        end: currentTime + 1,
+      });
     } else {
       ganttChart[ganttChart.length - 1].end = currentTime + 1;
     }
@@ -67,9 +86,18 @@ export const PP = (processes: Process[]): ScheduleResult => {
 
   resultProcesses.sort((a, b) => a.id - b.id);
 
-  const totalWaitingTime = resultProcesses.reduce((sum, p) => sum + p.waitingTime, 0);
-  const totalResponseTime = resultProcesses.reduce((sum, p) => sum + p.responseTime, 0);
-  const totalTurnAroundTime = resultProcesses.reduce((sum, p) => sum + p.turnAroundTime, 0);
+  const totalWaitingTime = resultProcesses.reduce(
+    (sum, p) => sum + p.waitingTime,
+    0
+  );
+  const totalResponseTime = resultProcesses.reduce(
+    (sum, p) => sum + p.responseTime,
+    0
+  );
+  const totalTurnAroundTime = resultProcesses.reduce(
+    (sum, p) => sum + p.turnAroundTime,
+    0
+  );
 
   const avg = {
     avgWaitingTime: totalWaitingTime / processes.length,
